@@ -96,6 +96,9 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
                 # Note that the variable mass is a string containing
                 # the type number and value of mass separated by a space
                 fileobj.write(f"mass {mass} \n")
+        if "set" in parameters:
+            for set in parameters["set"]:
+                fileobj.write(f"set {set} \n")
 
     if isinstance(lammps_in, str):
         fileobj = paropen(lammps_in, "w")
@@ -134,6 +137,12 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
                 '{} {} \n'.format(
                     style,
                     parameters[style]))
+        
+    if "kspace_modify" in parameters:
+        fileobj.write(
+            "kspace_modify {} \n".format(
+                parameters["kspace_modify"]))
+
 
     # write initialization lines needed for some LAMMPS potentials
     if 'model_init' in parameters:
@@ -179,7 +188,7 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
         lammps_create_atoms(fileobj, parameters, atoms, prismobj)
     # or simply refer to the data-file
     else:
-        fileobj.write(f"read_data {lammps_data}\n")
+        fileobj.write(f"read_data {lammps_data}  extra/bond/types 1 extra/angle/types 1 extra/bond/per/atom 2 extra/angle/per/atom 1 \n")
 
     # Write interaction stuff
     fileobj.write("\n### interactions\n")
@@ -205,6 +214,29 @@ def write_lammps_in(lammps_in, parameters, atoms, prismobj,
             "pair_style lj/cut 2.5 \n"
             "pair_coeff * * 1 1 \n"
             "mass * 1.0 \n"
+        )
+    
+    if ("bond_style" in parameters) and ("bond_coeff" in parameters):
+        fileobj.write(
+            "bond_style {} \n".format(parameters["bond_style"])
+        )
+        for bond_coeff in parameters["bond_coeff"]:
+            fileobj.write(
+                "bond_coeff {} \n".format(bond_coeff)
+            )
+    
+    if ("angle_style" in parameters) and ("angle_coeff" in parameters):
+        fileobj.write(
+            "angle_style {} \n".format(parameters["angle_style"])
+        )
+        for angle_coeff in parameters["angle_coeff"]:
+            fileobj.write(
+                "angle_coeff {} \n".format(angle_coeff)
+            )
+
+    for create_bonds in parameters["create_bonds"]:
+        fileobj.write(
+            "create_bonds {} \n" "".format(create_bonds)
         )
 
     if "group" in parameters:
